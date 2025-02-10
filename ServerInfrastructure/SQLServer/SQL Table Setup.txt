@@ -1,0 +1,57 @@
+CREATE TABLE `Users` (
+    `Email` VARCHAR(50) NOT NULL COLLATE 'utf8mb4_general_ci',
+    `FirstName` VARCHAR(50) NOT NULL COLLATE 'utf8mb4_general_ci',
+    `LastName` VARCHAR(50) NOT NULL COLLATE 'utf8mb4_general_ci',
+    `Password` VARCHAR(64) NOT NULL COLLATE 'utf8mb4_general_ci',
+    `Role` VARCHAR(50) NOT NULL COLLATE 'utf8mb4_general_ci',
+    `AcountStatus` VARCHAR(50) NOT NULL COLLATE 'utf8mb4_general_ci',
+    `VerificationCode` INT(11) NULL DEFAULT NULL,
+    `CodeExpiry` DATETIME NULL DEFAULT NULL,
+    `Notes` VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci',
+    PRIMARY KEY (`Email`) USING BTREE
+)
+COMMENT='Contains all user account data for the platform'
+COLLATE='utf8mb4_general_ci'
+ENGINE=InnoDB
+;
+
+CREATE TABLE `UserFeedback` (
+	`FeedbackID` INT(11) NOT NULL AUTO_INCREMENT,
+	`Feedback` TEXT NOT NULL COLLATE 'utf8mb4_general_ci',
+	`Rating` INT(11) NOT NULL,
+	PRIMARY KEY (`FeedbackID`) USING BTREE
+)
+COMMENT='Stores user feedback data received'
+COLLATE='utf8mb4_general_ci'
+ENGINE=InnoDB
+AUTO_INCREMENT=5
+;
+
+
+CREATE TABLE `Spaces` (
+    `SpaceID` INT(11) NOT NULL AUTO_INCREMENT,
+    `Name` VARCHAR(50) NOT NULL COLLATE 'utf8mb4_general_ci',
+    `Type` VARCHAR(50) NOT NULL COLLATE 'utf8mb4_general_ci',
+    `BuildingID` INT(11) NOT NULL,
+    `BuildingLevel` INT(11) NOT NULL,
+    `Description` VARCHAR(250) NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci',
+    PRIMARY KEY (`SpaceID`) USING BTREE
+)
+COMMENT='Stores data on all available spaces including all rooms and hotdesks'
+COLLATE='utf8mb4_general_ci'
+ENGINE=InnoDB
+;
+
+CREATE TABLE `Bookings` (
+    `BookingID` INT(11) NOT NULL AUTO_INCREMENT,
+    `SpaceID` INT(11) NOT NULL,
+    `UserEmail` VARCHAR(50) NOT NULL DEFAULT '' COLLATE 'utf8mb4_general_ci',
+    `StartTime` DATETIME NOT NULL,
+    `EndTime` DATETIME NOT NULL,
+    `Notes` VARCHAR(250) NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci',
+    PRIMARY KEY (`BookingID`) USING BTREE
+)
+COMMENT='This table stores the details on all bookings made on the platform'
+COLLATE='utf8mb4_general_ci'
+ENGINE=InnoDB
+;

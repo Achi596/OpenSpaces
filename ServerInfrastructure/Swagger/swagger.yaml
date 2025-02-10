@@ -1,0 +1,1426 @@
+openapi: 3.0.3
+info:
+  title: Open Spaces
+  description: |-
+    This is the API documentation for the Open Spaces backend and available routes. Open Spaces is a booking platform for reserving free rooms and hotdesks in UNSW. It is powered by Nodejs and express... [Insert Yap here]
+    
+    Project links:
+    - [WebApp](https:/openspaces.penguinserver.net/)
+    - [Github repository](https://github.com/unsw-cse-comp99-3900-24t1/capstone-project-3900f18bpookie)
+    - [Figma](https://www.figma.com/design/fLKzMmwO7utmv4O1GKp7pW/Comp3900-Storyboard?node-id=0-1)
+  version: 2.16.5
+servers:
+  - url: https://backend.openspaces.penguinserver.net/
+  - url: http://localhost:5000/
+tags:
+  - name: user
+    description: Operations about user
+  - name: bookings
+    description: Make and edit bookings
+  - name: spaces
+    description: View and edit spaces
+  - name: feedback
+    description: Send and receive feedback
+paths:
+  /user/create:
+    post:
+      tags:
+        - user
+      summary: Create user
+      description: Creates a new user in the database
+      operationId: createUser
+      requestBody:
+        description: Created user object
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Bad Request
+        '409':
+          description: User Already Exists
+        '403':
+          description: Email must belong to UNSW
+  /user/verify:
+    post:
+      tags:
+        - user
+      summary: Verify user
+      description: Verifies user account. User will not be signed in automatically once verified.
+      operationId: createUsersWithListInput
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserVerify'
+      responses:
+        '200':
+          description: Success
+        '404':
+          description: User does not exists
+        '403':
+          description: Incorrect code
+  /user/login:
+    get:
+      tags:
+        - user
+      summary: Logs user into the system
+      description: 'Logs user into the system using username and password'
+      operationId: loginUser
+      parameters:
+        - name: username
+          in: query
+          description: The user name for login (their email)
+          required: true
+          schema:
+            type: string
+        - name: password
+          in: query
+          description: The password for login in clear text
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserToken'          
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/UserToken'
+        '403':
+          description: Invalid username/password
+        '404':
+          description: User does not exist
+  /user/logout:
+    get:
+      tags:
+        - user
+      summary: Logs out user's current session
+      description: 'Invalidates provided session token'
+      operationId: logoutUser
+      parameters:
+        - name: token
+          in: query
+          description: Session token
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+        '404':
+          description: Session not found
+  /user/get:
+    get:
+      tags:
+        - user
+      summary: Get user by user name
+      description: 'username field is optional, if username is not supplied,
+      the details of the current user will be returned. User must be an admin
+      to use the username field.'
+      operationId: getUserByName
+      parameters:
+        - name: username
+          in: query
+          description: 'The email of the user that needs to be fetched.'
+          required: false
+          schema:
+            type: string
+        - name: token
+          in: query
+          description: "Logged in user's token"
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'          
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          description: Bad Request
+        '403':
+          description: User must be an admin to get other user's details
+        '404':
+          description: User not found
+  /user/sendCode:
+    get:
+      tags:
+        - user
+      summary: Send verification code
+      description: 'Sends a verification code to the user`s email'
+      operationId: sendverificationCodeUser
+      parameters:
+        - name: username
+          in: query
+          description: The email of the user attempting to verify their account
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+        '403':
+          description: Invalid username
+  /user/delete:
+    delete:
+      tags:
+        - user
+      summary: Delete user
+      description: This can only be done by cse admins.
+      operationId: deleteUser
+      parameters:
+        - name: username
+          in: query
+          description: The email of the user that needs to be deleted.
+          required: true
+          schema:
+            type: string
+        - name: token
+          in: query
+          description: The signed in user's token
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Bad Request
+        '403':
+          description: User must be an admin to delete other users
+        '404':
+          description: User does not exist
+  
+  /Booking/create:
+    post:
+      tags:
+        - bookings
+      summary: Create a booking
+      description: Creates a new booking for a room or hot desk
+      requestBody:
+        description: Booking details
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBooking'
+      responses:
+        '200':
+          description: Booking created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /booking/edit:
+    post:
+      tags:
+        - bookings
+      summary: Create a booking
+      description: Creates a new booking for a room or hot desk
+      requestBody:
+        description: Booking details
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EditBooking'
+      responses:
+        '200':
+          description: Booking created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /booking/override:
+    post:
+      tags:
+        - bookings
+      summary: Create a booking
+      description: Creates a new booking for a room or hot desk
+      requestBody:
+        description: Booking details
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OverrideBooking'
+      responses:
+        '200':
+          description: Booking created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /bookings/get/{bookingId}:
+    get:
+      tags:
+        - bookings
+      summary: Finds a booking by ID
+      description: HAS NOT BEEN IMPLEMENTED YET!!!
+      operationId: getOrderById
+      parameters:
+        - name: bookingId
+          in: path
+          description: ID of order that needs to be fetched
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/feedback'          
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/feedback'
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Booking not found
+  /bookings/availableSpaces/{spaceID}:
+    get:
+      tags:
+        - bookings
+      summary: Get available spaces for a given space and time range
+      description: Retrieve available time slots for the given space ID, start time, and end time.
+      parameters:
+        - name: spaceID
+          in: path
+          required: true
+          description: The ID of the space
+          schema:
+            type: integer
+        - name: startTime
+          in: query
+          required: true
+          description: The start time of the desired booking slot
+          schema:
+            type: string
+            format: date-time
+        - name: endTime
+          in: query
+          required: true
+          description: The end time of the desired booking slot
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TimeSlot'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Error message"
+  /bookings/availableSpaces/{floorplanID}:
+    get:
+      tags:
+        - bookings
+      summary: Get available spaces for a given floor plan and time range
+      description: Retrieve available rooms or desks for the given floor plan ID, start time, and end time.
+      parameters:
+        - name: floorplanID
+          in: path
+          required: true
+          description: The ID of the floor plan
+          schema:
+            type: integer
+        - name: startTime
+          in: query
+          required: true
+          description: The start time of the desired booking slot
+          schema:
+            type: string
+            format: date-time
+        - name: endTime
+          in: query
+          required: true
+          description: The end time of the desired booking slot
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Space'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Error message"
+  /bookings/list/{spaceID}:
+    get:
+      tags:
+        - bookings
+      summary: List bookings for a space
+      description: Retrieve all active bookings for a given space ID. Only accessible by admins.
+      parameters:
+        - name: spaceID
+          in: path
+          required: true
+          description: The ID of the space
+          schema:
+            type: integer
+        - name: token
+          in: query
+          required: true
+          description: The admin's token
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Booking'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Admin access required for this operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /bookings/getUserAll:
+    get:
+      tags:
+        - bookings
+      summary: Finds a booking by using token
+      description: gets all bookings active
+      operationId: getbookinguserall
+      parameters:
+        - name: token
+          in: query
+          description: The signed in user's token
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Booking not found
+  /Bookings/delete:
+    delete:
+      tags:
+        - bookings
+      summary: remove booking
+      description: This can only be done by cse admins, or person booking
+      operationId: removeBooking
+      parameters:
+        - name: BookingID
+          in: query
+          description: The BookingID of the booking that needs to be deleted.
+          required: true
+          schema:
+            type: integer
+        - name: token
+          in: query
+          description: The signed in user's token
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Bad Request
+        '403':
+          description: User must be an admin to remove booking
+        '404':
+          description: Booking does not exist
+  
+  /spaces/create:
+    post:
+      tags:
+        - spaces
+      summary: Create space
+      description: Creates a new space in the database
+      operationId: spaceCreate
+      requestBody:
+        description: created upject
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/spaceCreate'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/spaceCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/spaceCreate'
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Bad Request
+        '409':
+          description: User Already Exists
+        '403':
+          description: Email must belong to UNSW
+  /space/checkIn:
+    post:
+      tags:
+        - spaces
+      summary: Create space
+      description: Creates a new space in the database
+      operationId: spaceCheckIn
+      requestBody:
+        description: created upject
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpaceCheckIn'
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Bad Request
+        '409':
+          description: User Already Exists
+        '403':
+          description: Email must belong to UNSW    
+  /spaces/search:
+    get:
+      tags:
+        - spaces
+      summary: Searches for space by name
+      description: Takes a query and returns any spaces that contains the keywords in the name
+      operationId: searchSpaces
+      parameters:
+        - name: token
+          in: query
+          description: The signed in user's token
+          required: true
+          schema:
+            type: string
+        # - name: name
+        #   in: query
+        #   description: name of space
+        #   required: false
+        #   schema:
+        #     type: string
+        - name: features
+          in: query
+          description: Whiteboard/Desktops/Projector/Capacity (write as is shown here)
+          required: false
+          schema:
+            type: string
+        - name: keywords
+          in: query
+          description: hotDesk/meetingRoom (write as is shown here)
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/searchSpaces'          
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/searchSpaces'
+        '401':
+          description: User not Authenticated - Invalid token
+        '400':
+          description: Invalid search query - query length must be [1-200]
+  /spaces/get/{spaceId}:
+    get:
+      tags:
+        - spaces
+      summary: Finds a booking by ID
+      description: Return the details on a requested space by it's ID
+      operationId: getInventory1
+      parameters:
+        - name: token
+          in: query
+          schema:
+            type: string
+          required: true
+          description: token of the user
+        - name: spaceId
+          in: path
+          description: ID of order that needs to be fetched
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetSpace'          
+        '400':
+          description: Bad Request
+        '404':
+          description: Space not found
+  
+  /feedback/create:
+    post:
+      tags:
+        - feedback
+      summary: Creates new feedback
+      description: Adds new feedback to the database
+      operationId: placeOrder2
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/feedback'
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Invalid input
+        '422':
+          description: Validation exception
+  
+  /floorplan/create:
+    post:
+      tags:
+        - floorplans
+      summary: Create a floorplan
+      description: Create a floorplan
+      operationId: createFloorplans
+      requestBody:
+        description: Created user object
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createFloorplan'
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Bad Request; Invalid Name | Pins cannot be empty | Image must be a valid url to an image
+        '401':
+          description: User not Authenticated - No token supplied token
+        '498':
+          description: User not Authorised - Invalid token
+  /floorplan/list:
+    get:
+      tags:
+        - floorplans
+      summary: Lists all floorplans
+      description: Lists the floorplanID and the name of every floorplan in the database
+      operationId: listFloorplans
+      parameters:
+        - name: token
+          in: query
+          description: The signed in user's token
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/listFloorplans'
+        '401':
+          description: User not Authenticated - No token supplied token
+        '498':
+          description: User not Authorised - Invalid token
+  /floorplan/get:
+    get:
+      tags:
+        - floorplans
+      summary: Gets details about a floorplan
+      description: Takes a floorplanID and returns all details about the floorplan
+      operationId: getFloorplans
+      parameters:
+        - name: token
+          in: query
+          description: The signed in user's token
+          required: true
+          schema:
+            type: string
+        - name: floorplanID
+          in: query
+          description: ID of the floorplan that needs to be fetched
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/getFloorplans'
+        '401':
+          description: User not Authenticated - No token supplied token
+        '498':
+          description: User not Authenticated - Invalid token
+        '400':
+          description: Invalid floorplanID supplied
+        '404':
+          description: floorplan not found
+  
+  /help/create:
+    post:
+      tags:
+        - help
+      summary: Creates a new help ticket
+      description: Adds new helpform to the database
+      operationId: createhelp
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/help'
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Invalid input
+        '422':
+          description: Validation exception
+  /help/get:
+    get:
+      tags:
+        - help
+      summary: Retreives help tickets
+      description: Retreives help tickets that correspond to a specific state
+      operationId: gethelp
+      parameters:
+        - name: token
+          in: query
+          description: The signed in user's token
+          required: true
+          schema:
+            type: string
+        - name: state
+          in: query
+          description: Must be active, closed or all
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+        '403':
+          description: Invalid token
+        '400':
+          description: Invalid state
+  
+  /request/override:
+    post:
+      tags:
+        - request
+      summary: Requests for a booking override
+      description: Creates a new notification for the admin to view
+      operationId: bookingOverride
+      requestBody:
+        description: Created user object
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestOverride'
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Bad Request
+        '404':
+          description: Space not found
+        '498':
+          description: Invalid token
+        '403':
+          description: Admin access required for this operation
+  
+  /notifications/get:
+    get:
+      tags:
+        - notifications
+      summary: Finds a booking by ID
+      description: Return the details on a requested space by it's ID
+      operationId: getNotifications
+      parameters:
+        - name: token
+          in: query
+          schema:
+            type: string
+          required: true
+          description: token of the user
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetNotifications'          
+        '400':
+          description: Bad Request
+        '498':
+          description: Invalid token
+        '403':
+          description: Admin access required for this operation
+  /notifications/delete:
+    delete:
+      tags:
+        - notifications
+      summary: Delete a notification
+      description: This can only be done by cse admins.
+      operationId: deleteNotification
+      parameters:
+        - name: notificationID
+          in: query
+          description: The ID of the notification to be deleted
+          required: true
+          schema:
+            type: integer
+        - name: token
+          in: query
+          description: The signed in user's token
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Bad Request
+        '403':
+          description: Admin access required for this operation
+        '498':
+          description: Invalid token
+
+  /data/upload:
+    post:
+      tags:
+        - data
+      summary: Upload an image to the CDN
+      description: Uploads an image to the CDN and returns an associated URL
+      requestBody:
+        description: Image file to upload
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Successful upload and URL retrieval
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  imageURL:
+                    type: string
+                    example: 'https://cdn.openspaces.penguinserver.net/i/xxx-xxx-xxx.png'
+        '400':
+          description: File extension is missing from upload
+
+        '500':
+          description: CDN Error. Please try again later
+
+  /usageStats/get:
+      get:
+        tags:
+          - statistics
+        summary: Get user by user name
+        description: 'username field is optional, if username is not supplied,
+        the details of the current user will be returned. User must be an admin
+        to use the username field.'
+        operationId: getUsageStats
+        parameters:
+          - name: spaceId
+            in: query
+            description: 'The email of the user that needs to be fetched.'
+            required: true
+            schema:
+              type: string
+          - name: token
+            in: query
+            description: "Logged in user's token"
+            required: true
+            schema:
+              type: string
+        responses:
+          '200':
+            description: Success
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items: 
+                    $ref: '#/components/schemas/UsageStats'    
+          '400':
+            description: Bad Request
+          '403':
+            description: Admin access required for this operation
+          '404':
+            description: Space not found
+components:
+  schemas:
+    UsageStats:
+      type: object
+      properties:
+        totalBookings:
+          type: integer
+          example: 50
+        checkedInBookings:
+          type: integer
+          example: 30
+        notCheckedInBookings:
+          type: integer
+          example: 12
+        totalBookingsLastWeek:
+          type: integer
+          example: 10
+    TimeSlot:
+      type: object
+      properties:
+        start:
+          type: string
+          format: date-time
+          example: "2024-07-12T10:00:00"
+        end:
+          type: string
+          format: date-time
+          example: "2024-07-12T10:30:00"
+    CreateBooking:
+      type: object
+      properties:
+        token:
+          type: string
+          example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
+        spaceId:
+          type: integer
+          example: 1
+        startTime:
+          type: string
+          format: date-time
+          example: "2024-07-12T10:00:00"
+        endTime:
+          type: string
+          format: date-time
+          example: "2024-07-12T11:00:00"
+        notes:
+          type: string
+          example: "Team meeting"
+      required:
+        - userEmail
+        - spaceId
+        - startTime
+        - endTime
+    BookingResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Booking created successfully"
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Error message"
+    OverrideBooking:
+      type: object
+      properties:
+        username:
+          type: string
+          example: "user@example.com"
+        spaceId:
+          type: integer
+          example: 1
+        startTime:
+          type: string
+          format: date-time
+          example: "2024-07-12T10:00:00"
+        endTime:
+          type: string
+          format: date-time
+          example: "2024-07-12T11:00:00"
+        token:
+          type: string
+          example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
+    Booking:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        spaceID:
+          type: integer
+          example: 1
+        userEmail:
+          type: string
+          example: "user@example.com"
+        startTime:
+          type: string
+          format: date-time
+          example: "2024-07-12T10:00:00"
+        endTime:
+          type: string
+          format: date-time
+          example: "2024-07-12T11:00:00"
+        status:
+          type: string
+          example: "active"
+        notes:
+          type: string
+          example: "Team meeting"
+    Space:
+        type: object
+        properties:
+          id:
+            type: integer
+            example: 1
+          name:
+            type: string
+            example: "Room 1"
+          floorplanID:
+            type: integer
+            example: 1
+          capacity:
+            type: integer
+            example: 10
+          type:
+            type: string
+            example: "room"
+          status:
+            type: string
+            example: "available"
+          notes:
+            type: string
+            example: "This is a room"
+        xml:
+          name: space
+    GetNotifications:
+        type: array
+        items:
+          type: object
+          properties:
+            notificationID:
+              type: integer
+              format: int32
+              example: 1
+            type:
+              type: string
+              example: Override Request / Help Request
+            message:
+              type: string
+              example: "Booking override requested for: "
+            username:
+              type: string
+              example: "john@unsw.edu.au"
+            spaceID:
+              type: integer
+              format: int32
+              example: 34
+              description: spaceID, start and end time can be null if request is for help
+            startTime:
+              type: string
+              description: DATETIME variable
+              format: 'YYYY-MM-DD HH:MI:SS'
+              example: '2024-06-15 17:40:00'
+            endTime:
+              type: string
+              description: DATETIME variable
+              format: 'YYYY-MM-DD HH:MI:SS'
+              example: '2024-06-15 17:40:00'
+    RequestOverride:
+        type: object
+        properties:
+          spaceID:
+            type: integer
+            example: 12
+          startTime:
+            type: string
+            description: DATETIME variable
+            format: 'YYYY-MM-DD HH:MI:SS'
+            example: '2024-06-15 17:40:00'
+          endTime:
+            type: string
+            description: DATETIME variable
+            format: 'YYYY-MM-DD HH:MI:SS'
+            example: '2024-06-15 17:40:00'
+          token:
+              type: string
+              example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
+    spaceCreate:
+      type: object
+      properties:
+        token:
+          description: jwt token
+          type: string
+          example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
+        Name:
+          type: string
+          example: 'G014'
+        Type:
+          type: string
+          example: 'Meeting Room'
+        Capacity:
+          type: integer
+          example: '24'
+        Projector:
+          type: integer
+          example: '3'
+        Whiteboard:
+          type: integer
+          example: '2'
+        Desktops:
+          type: integer
+          example: '12'
+        Thumbnail:
+          type: string
+          example: 'xxx12131jxzklj1231'
+        Description:
+          type: string
+          example: 'spacious room tehehe'
+      xml:
+        name: spacecreate
+    EditBooking:
+      type: object
+      properties:
+        token:
+          type: string
+          example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
+        bookingId:
+          type: integer
+          example: 1
+        newStartTime:
+          type: string
+          format: date-time
+          example: "2024-07-12T10:00:00"
+        newEndTime:
+          type: string
+          format: date-time
+          example: "2024-07-12T11:00:00"
+        notes:
+          type: string
+          example: "Team meeting"
+      required:
+        - token
+        - bookingId
+    GetSpace:
+      type: object
+      properties:
+        SpaceID:
+          type: integer
+          format: int32
+          example: 1
+        name:
+          type: string
+          example: 504A
+        type:
+          type: string
+          example: room
+        Capacity:
+          type: integer
+          format: int32
+          example: 34
+        Projector:
+          type: integer
+          format: int32
+          example: 2
+        Whiteboard:
+          type: integer
+          format: int32
+          example: 3
+        Desktops:
+          type: integer
+          format: int32
+          example: 1
+        Thumbnail:
+          type: string
+          example: https://cdn.openspaces.penguinserver.net/i/85ea1ae2-68df-4a3a-b1c8-f5d339406002.jpg
+        Description:
+          type: string
+          example: Gyatttttt!!!
+    feedback:
+      type: object
+      properties:
+        token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+        rating:
+          type: integer
+          format: int32
+          example: 7
+        feedback:
+          type: string
+          example: 'meow meow meow'
+    help:
+      type: object
+      properties:
+        token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+        textHelp:
+          type: string
+          example: 'meow meow meow'
+        userEmail:
+          type: string
+          example: 'example@example.com'
+    createFloorplan:
+      type: object
+      properties:
+        token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjdXJyZW50VGltZSI6IjIwMjQtMDctMThUMDE6NTU6MzAuNTIzWiIsImV4cGlyeVRpbWUiOjE3MjEyNzEzMzAsImlhdCI6MTcyMTI2NzczMH0.FIlqMi1J9kVmt1XL5BYf6DGau9y2cKWnLtG4DRUiYeY
+        Name:
+          type: string
+          example: 'New Floorplan Name'
+        Pins:
+          type: string
+          example: '[{\"pinID\":1,\"spaceID\":234,\"coordinates\":[174,1139,521,1857],\"type\":\"Room\"}]'
+        Image:
+          type: string
+          example: 'https://example.com/example.png'
+    searchSpaces:
+      type: object
+      properties:
+        SpaceID:
+          type: integer
+          format: int32
+          example: 1
+        name:
+          type: string
+          example: 504A
+        type:
+          type: string
+          example: room
+        Capacity:
+          type: integer
+          format: int32
+          example: 34
+        Projector:
+          type: integer
+          format: int32
+          example: 2
+        Whiteboard:
+          type: integer
+          format: int32
+          example: 3
+        Desktops:
+          type: integer
+          format: int32
+          example: 1
+        Thumbnail:
+          type: string
+          example: https://cdn.openspaces.penguinserver.net/i/85ea1ae2-68df-4a3a-b1c8-f5d339406002.jpg
+        Description:
+          type: string
+          example: Gyatttttt!!!
+    listFloorplans:
+      type: array
+      items:
+        type: object
+        properties:
+          FloorplanID:
+            type: integer
+            format: int32
+            example: 1
+          Name:
+            type: string
+            example: J17L5
+    getFloorplans:
+      type: array
+      items:
+        type: object
+        properties:
+          FloorplanID:
+            type: integer
+            format: int32
+            example: 1
+          Name:
+            type: string
+            example: J17L5
+          Image:
+            type: string
+            example: "https://cdn.openspaces.penguinserver.net/i/477c7e6c-3b03-811d-26cfc465d930.jpg"
+          Pins:
+            type: string
+            example: "[{\"pinID\":1,\"spaceID\":234,\"coordinates\":[174,3,521,5],\"type\":\"Room\"}]"
+    User:
+      type: object
+      properties:
+        firstName:
+          type: string
+          example: 'John'
+        lastName:
+          type: string
+          example: 'James'
+        email:
+          type: string
+          example: 'john@unsw.edu.au'
+        password:
+          type: string
+          example: '12345'
+        role:
+          type: string
+          example: 'admin'
+        accountStatus:
+          type: string
+          description: verified, un-verified
+          example: 'verified'
+        verificationCode:
+          type: integer
+          example: 123456
+        codeExpiry:
+          type: string
+          description: DATETIME variable
+          format: 'YYYY-MM-DD HH:MI:SS'
+          example: '2024-06-15 17:40:00'
+        notes:
+          type: string
+          example: 'lsdfgjsdfligjfdgildf'
+      xml:
+        name: user
+    UserCreate:
+      type: object
+      properties:
+        firstName:
+          type: string
+          example: 'John'
+        lastName:
+          type: string
+          example: 'James'
+        email:
+          type: string
+          example: 'john@unsw.edu.au'
+        password:
+          type: string
+          example: '12345'
+      xml:
+        name: usercreate
+    UserVerify:
+      type: object
+      properties:
+        username:
+          type: string
+          example: 'john@unsw.edu.au'
+        verificationCode:
+          type: integer
+          example: 123456
+      xml:
+        name: userverify
+    UserResponse:
+      type: object
+      properties:
+        firstName:
+          type: string
+          example: 'John'
+        lastName:
+          type: string
+          example: 'James'
+        email:
+          type: string
+          example: 'john@unsw.edu.au'
+        role:
+          type: string
+          example: 'admin'
+        accountStatus:
+          type: string
+          description: verified, un-verified
+          example: 'verified'
+        notes:
+          type: string
+          example: 'lsdfgjsdfligjfdgildf'
+      xml:
+        name: userresponse
+    UserToken:
+      type: object
+      properties:
+        token:
+          description: jwt token
+          type: string
+          example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
+    SpaceCheckIn:
+      type: object
+      properties:
+        username:
+          type: string
+          example: 'john@unsw.edu.au'
+        pin:
+          type: integer
+          example: 123456
+        roomNumber:
+          type: string
+          example: 'K17LG2'
+          

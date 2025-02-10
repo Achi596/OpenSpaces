@@ -1,0 +1,128 @@
+version: '3.8'
+
+volumes:
+  system-Data:
+  swagger-api:
+  picsur-data:
+
+services:
+  open-spaces-SQL-DB:
+    container_name: open-spaces-mariadb
+    image: mariadb
+    restart: always
+    command: --transaction-isolation=READ-COMMITTED --innodb-file-per-table=1
+    volumes:
+      - system-Data:/var/lib/mysql
+    ports:
+      - 3306:3306
+    environment:
+      - TZ=Australia/Sydney
+      - MYSQL_ROOT_PASSWORD=m49C*CG^KMX%G*
+      - MYSQL_PASSWORD=NXA#Y22*XswTQh
+      - MYSQL_DATABASE=SystemData
+      - MYSQL_USER=Aqua
+
+  open-spaces-swagger-ui:
+    image: swaggerapi/swagger-ui
+    container_name: open-spaces-swagger-ui
+    ports:
+      - "3307:8080"
+    environment:
+      - SWAGGER_JSON=/swagger-api/swagger.yaml
+    volumes:
+      - swagger-api:/swagger-api
+
+  open-spaces-swagger-editor:
+    image: swaggerapi/swagger-editor
+    container_name: open-spaces-swagger-editor
+    ports:
+      - "3308:8080"
+    volumes:
+      - swagger-api:/swagger-api
+
+  open-spaces-backend:
+    image: achi596/openspaces-backend:latest
+    container_name: open-spaces-backend
+    depends_on:
+      - open-spaces-SQL-DB
+    ports:
+      - "3333:5000"
+    environment:
+      - CDN_ADMIN_PASSWORD=WDFX3zJz91VAia
+      - CDN_BASEURL=https://cdn.openspaces.penguinserver.net
+      - BACKEND_PORT=5000
+      - BACKEND_JWT_SECRET=3900F18BPookie
+      - BACKEND_GMAIL_USERNAME=comppookie@gmail.com
+      - BACKEND_GMAIL_PASSWORD=xuwy zgsx bdsl bldu
+      - SQL_HOST=10.16.0.5
+      - SQL_USER=root
+      - SQL_PASSWORD=m49C*CG^KMX%G*
+      - SQL_DATABASE=SystemData
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  open-spaces-frontend:
+    image: achi596/openspaces-frontend:latest
+    container_name: open-spaces-frontend
+    depends_on:
+      - open-spaces-backend
+    environment:
+      - BACKEND_URL=https://backend.openspaces.penguinserver.net/
+    ports:
+      - "3334:80"
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  open-spaces-cloudbeaver:
+    image: dbeaver/cloudbeaver:latest
+    container_name: open-spaces-sql-viewer
+    ports:
+      - '8978:8978'
+    environment:
+      - CB_DB_DRIVER=mariadb
+      - CB_DB_HOST=10.16.0.5
+      - CB_DB_PORT=3306
+      - CB_DB_USER=root
+      - CB_DB_PASS=m49C*CG^KMX%G*
+
+  open-spaces-watchtower:
+    image: containrrr/watchtower
+    container_name: open-spaces-watchtower
+    restart: unless-stopped
+    environment:
+      - WATCHTOWER_POLL_INTERVAL=300
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_LABEL_ENABLE=true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --include-stopped
+
+  open-spaces-picsur:
+    image: ghcr.io/caramelfur/picsur:latest
+    container_name: open-spaces-picsur
+    ports:
+      - '3434:8080'
+    environment:
+      - PICSUR_HOST=0.0.0.0
+      - PICSUR_PORT=8080
+      - PICSUR_DB_HOST=open-spaces-picsur_postgres
+      - PICSUR_DB_PORT=5432
+      - PICSUR_DB_USERNAME=picsur
+      - PICSUR_DB_PASSWORD=gLTdHhMjodU0uw
+      - PICSUR_DB_DATABASE=picsur
+      - PICSUR_ADMIN_PASSWORD=WDFX3zJz91VAia
+      - PICSUR_JWT_SECRET=24Co*gV0PJIhw@
+      - PICSUR_JWT_EXPIRY=7d
+      - PICSUR_MAX_FILE_SIZE=128000000
+    restart: unless-stopped
+
+  open-spaces-picsur_postgres:
+    image: postgres:14-alpine
+    container_name: open-spaces-picsur_postgres
+    environment:
+      - POSTGRES_DB=picsur
+      - POSTGRES_PASSWORD=gLTdHhMjodU0uw
+      - POSTGRES_USER=picsur
+    restart: unless-stopped
+    volumes:
+      - picsur-data:/var/lib/postgresql/data
